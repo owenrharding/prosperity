@@ -36,7 +36,7 @@ class Trader:
             result[product] = orders
         return result
 
-    def calculate_mean_reversion():
+    def calculate_z_score(product, priceListOfProduct ...):
         # I'm thinking that, rather than calculating the mean of each product
         # each time we get a new TradingState, we should calculate it once, store the mean of
         # each product somewhere, and then update it when we get a new TradingState

@@ -4,24 +4,26 @@ import string
 
 class Trader:
     
+    POSITION_LIMITS = {'AMETHYST': 20, 'STARFUIT': 20}
+
     def run(self, state: TradingState):
         # Only method required. It takes all buy and sell orders for all symbols as an input, and outputs a list of orders to be sent
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
-        result = {'AMETHYST': [], 'STARFRUIT': []}
+
+        result = {'AMETHYST': 0, 'STARFRUIT': 0}
+
+        # Iterate over all the keys (the available products) contained in the order dephts
+        for key, val in state.position.items():
+            self.position[key] = val
+        print()
+        for key, val in self.position.items():
+            print(f'{key} position: {val}')
+
         for product in state.order_depths:
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
-
-            # Iterate over all the keys (the available products) contained in the order dephts
-            for key, val in state.position.items():
-                self.position[key] = val
-            print()
-            for key, val in self.position.items():
-                print(f'{key} position: {val}')
-
             acceptable_price = 10;  # Participant should calculate this value
-
             print("Acceptable price : " + str(acceptable_price))
             print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
     

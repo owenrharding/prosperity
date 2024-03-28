@@ -19,18 +19,23 @@ class Trader:
             acceptable_price = 10;  # Participant should calculate this value
             print(f"Acceptable price for {product}: {acceptable_price}")
             print(f"Buy Order depth for {product}: {len(order_depth.buy_orders)}, Sell order depth for {product}: {len(order_depth.sell_orders)}")
+
+            current_pos = state.position.get(product, 0)
+            pos_limit = self.POSITION_LIMIT.get(product, 0)
+
+            if current_pos < pos_limit:
+                if len(order_depth.sell_orders) != 0:
+                    best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
+                    if int(best_ask) < acceptable_price:
+                        print(f"BUY {product}: {str(-best_ask_amount)}x at {best_ask}")
+                        orders.append(Order(product, best_ask, -best_ask_amount))
+            else:
+                if len(order_depth.buy_orders) != 0:
+                    best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
+                    if int(best_bid) > acceptable_price:
+                        print(f"SELL {product}: {str(best_bid_amount)}x at {best_bid}")
+                        orders.append(Order(product, best_bid, -best_bid_amount))
     
-            if len(order_depth.sell_orders) != 0:
-                best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
-                if int(best_ask) < acceptable_price:
-                    print(f"BUY {product}: {str(-best_ask_amount)}x at {best_ask}")
-                    orders.append(Order(product, best_ask, -best_ask_amount))
-    
-            if len(order_depth.buy_orders) != 0:
-                best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
-                if int(best_bid) > acceptable_price:
-                    print(f"SELL {product}: {str(best_bid_amount)}x at {best_bid}")
-                    orders.append(Order(product, best_bid, -best_bid_amount))
             
             result[product] = orders
     

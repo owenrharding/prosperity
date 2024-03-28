@@ -12,34 +12,32 @@ class Trader:
         print("Observations: " + str(state.observations))
         
         result = {'AMETHYST': [], 'STARFRUIT': []}
-
-        for product in ['AMETHYST', 'STARFRUIT']:
-            order_depth: OrderDepth = state.order_depths.get(product, OrderDepth())
+        for product in state.order_depths:
+            order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
-            acceptable_price = 10;  # Participant should calculate this value
-            print(f"Acceptable price for {product}: {acceptable_price}")
-            print(f"Buy Order depth for {product}: {len(order_depth.buy_orders)}, Sell order depth for {product}: {len(order_depth.sell_orders)}")
-
-            current_pos = state.position.get(product, 0)
-            pos_limit = self.POSITION_LIMIT.get(product, 0)
-
-            if current_pos < pos_limit:
+            currentProductPosition = state.position.get(product, 0)
+            
+            if currentProductPosition < self.POSITION_LIMIT[product]:
                 if len(order_depth.sell_orders) != 0:
                     best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
                     if int(best_ask) < acceptable_price:
                         print(f"BUY {product}: {str(-best_ask_amount)}x at {best_ask}")
                         orders.append(Order(product, best_ask, -best_ask_amount))
-            else:
+    
+            if currentProductPosition >= self.POSITION_LIMIT[product]:
                 if len(order_depth.buy_orders) != 0:
                     best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
                     if int(best_bid) > acceptable_price:
                         print(f"SELL {product}: {str(best_bid_amount)}x at {best_bid}")
                         orders.append(Order(product, best_bid, -best_bid_amount))
-    
-            
+                
             result[product] = orders
     
-        traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.
+        # Update trader data if needed
+        traderData = "SAMPLE"
         
+        # Assume conversions and timestamp for simplicity
         conversions = 1
-        return result, conversions, traderData
+        timestamp = 0
+       
+        return result, conversions, traderData, timestamp

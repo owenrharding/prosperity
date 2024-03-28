@@ -24,19 +24,19 @@ class Trader:
 
             print(f"CurrentPos, PosLimit for {product}: {current_product_position} {self.POSITION_LIMIT[product]}")
 
-            if current_product_position < self.POSITION_LIMIT[product]:
-                if len(order_depth.sell_orders) != 0:
-                    best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
-                    if int(best_ask) < acceptable_price:
-                        print(f"BUY {product}: {str(-best_ask_amount)}x at {best_ask}")
-                        orders.append(Order(product, best_ask, -best_ask_amount))
+            #if current_product_position < self.POSITION_LIMIT[product]:
+            if len(order_depth.sell_orders) != 0:
+                best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
+                if int(best_ask) < acceptable_price:
+                    print(f"BUY {product}: {str(-best_ask_amount)}x at {best_ask}")
+                    orders.append(Order(product, best_ask, -best_ask_amount))
                         
-            if current_product_position >= self.POSITION_LIMIT[product]:
-                if len(order_depth.buy_orders) != 0:
-                    best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
-                    if int(best_bid) > acceptable_price:
-                        print(f"SELL {product}: {str(best_bid_amount)}x at {best_bid}")
-                        orders.append(Order(product, best_bid, -best_bid_amount))
+            #if current_product_position >= self.POSITION_LIMIT[product]:
+            if len(order_depth.buy_orders) != 0:
+                best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
+                if int(best_bid) > acceptable_price:
+                    print(f"SELL {product}: {str(best_bid_amount)}x at {best_bid}")
+                    orders.append(Order(product, best_bid, -best_bid_amount))
     
             
             result[product] = orders

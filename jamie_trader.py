@@ -11,7 +11,7 @@ class Trader:
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
         
-        result = {'AMETHYST': [], 'STARFRUIT': []}
+        result = {'AMETHYSTS': [], 'STARFRUIT': []}
 
         for product in ['AMETHYST', 'STARFRUIT']:
             order_depth: OrderDepth = state.order_depths.get(product, OrderDepth())

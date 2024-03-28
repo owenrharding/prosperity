@@ -36,8 +36,7 @@ class Trader:
         # Update trader data if needed
         traderData = "SAMPLE"
         
-        # Assume conversions and timestamp for simplicity
+        # Assume conversions for simplicity
         conversions = 1
-        timestamp = 0
        
-        return result, conversions, traderData, timestamp
+        return result, conversions, traderData

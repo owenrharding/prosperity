@@ -22,6 +22,8 @@ class Trader:
 
             current_product_position = state.position.get(product, 0)
 
+            print(f"CurrentPos, PosLimit for {product}: {current_product_position} {self.POSITION_LIMIT[product]}")
+
             if current_product_position < self.POSITION_LIMIT[product]:
                 if len(order_depth.sell_orders) != 0:
                     best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]

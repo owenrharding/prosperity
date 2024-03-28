@@ -13,6 +13,7 @@ class Trader:
         
         result = {'AMETHYST': [], 'STARFRUIT': []}
         for product in state.order_depths:
+            acceptable_price = 5
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
             currentProductPosition = state.position.get(product, 0)
@@ -38,5 +39,6 @@ class Trader:
         
         # Assume conversions for simplicity
         conversions = 1
+        timestamp = 0
        
-        return result, conversions, traderData
+        return result, conversions, traderData, timestamp

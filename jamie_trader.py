@@ -13,7 +13,7 @@ class Trader:
         
         result = {'AMETHYSTS': [], 'STARFRUIT': []}
 
-        for product in ['AMETHYST', 'STARFRUIT']:
+        for product in ['AMETHYSTS', 'STARFRUIT']:
             order_depth: OrderDepth = state.order_depths.get(product, OrderDepth())
             orders: List[Order] = []
             acceptable_price = 10;  # Participant should calculate this value

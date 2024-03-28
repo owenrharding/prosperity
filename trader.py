@@ -11,7 +11,7 @@ class Trader:
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
 
-        result = {'AMETHYST': 0, 'STARFRUIT': 0}
+        result = {'AMETHYST': [], 'STARFRUIT': []}
 
         # Iterate over all the keys (the available products) contained in the order dephts
         for key, val in state.position.items():

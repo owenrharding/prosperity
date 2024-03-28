@@ -20,7 +20,7 @@ class Trader:
         for key, val in state.position.items():
             self.position[key] = val
         print()
-        for key, val in self.position.items():
+        for key, val in state.position.items():
             print(f'{key} position: {val}')
 
         for product in state.order_depths:

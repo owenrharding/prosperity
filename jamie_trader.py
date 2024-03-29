@@ -61,25 +61,25 @@ class Trader:
             acc_bid = {'AMETHYSTS' : lb, 'STARFRUIT' : lb} # we want to buy at slightly below
             acc_ask = {'AMETHYSTS' : ub, 'STARFRUIT' : ub} # we want to sell at slightly above
 
-            bid_pr = min(undercut_buy, acc_bid-1) # we will shift this by 1 to beat this price
-            sell_pr = max(undercut_sell, acc_ask+1)
+            bid_pr = min(undercut_buy, acc_bid[product]-1) # we will shift this by 1 to beat this price
+            sell_pr = max(undercut_sell, acc_ask[product]+1)
 
             current_pos = self.position[product]
 
             if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] < 0):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                self.position[product] += newnum
+                current_pos += newnum
                              
             if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] > 15):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                self.position[product] += newnum
+                current_pos += newnum
 
             if (current_pos < self.POSITION_LIMIT[product]):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, bid_pr, newnum))
-                self.position[product] += newnum
+                current_pos += newnum
 
             result[product] += orders
     

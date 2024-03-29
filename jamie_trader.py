@@ -81,31 +81,6 @@ class Trader:
                 orders.append(Order(product, bid_pr, newnum))
                 current_pos += newnum
 
-            current_pos = self.position[product]
-
-            for bid, vol in obuy.items():
-                if ((bid > acc_ask) or ((self.position[product]>0) and (bid == acc_ask))) and current_pos > -self.POSITION_LIMIT[product]:
-                    order_for = max(-vol, -self.POSITION_LIMIT[product]-current_pos)
-                    # order_for is a negative number denoting how much we will sell
-                    current_pos += order_for
-                    assert(order_for <= 0)
-                    orders.append(Order(product, bid, order_for))
-
-            if (current_pos > -self.POSITION_LIMIT[product]) and (self.position[product] > 0):
-                num = max(-40, -self.POSITION_LIMIT[product]-current_pos)
-                orders.append(Order(product, max(undercut_sell-1, acc_ask+1), num))
-                current_pos += num
-
-            if (current_pos > -self.POSITION_LIMIT[product]) and (self.position[product] < -15):
-                num = max(-40, -self.POSITION_LIMIT[product]-current_pos)
-                orders.append(Order(product, max(undercut_sell+1, acc_ask+1), num))
-                current_pos += num
-
-            if current_pos > -self.POSITION_LIMIT[product]:
-                num = max(-40, -self.POSITION_LIMIT[product]-current_pos)
-                orders.append(Order(product, sell_pr, num))
-                current_pos += num
-
             result[product] += orders
     
         traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.

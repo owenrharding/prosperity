@@ -1,89 +1,59 @@
 from datamodel import OrderDepth, UserId, TradingState, Order
-import collections
-from collections import defaultdict
 from typing import List
 import string
-import copy
-
-empty_dict = {'AMETHYSTS' : 0, 'STARFRUIT' : 0}
 
 class Trader:
+    
+    products = {
+        'AMETHYSTS': {'Position_Limit': 20, 'Current_Position': 0},
+        'STARFRUIT': {'Position_Limit': 20, 'Current_Position': 0}
+    }
 
-    POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
-    position = copy.deepcopy(empty_dict)
-    cpnl = defaultdict(lambda : 0)
-    volume_traded = copy.deepcopy(empty_dict)
-
-    def values_extract(self, order_dict, buy=0):
-        tot_vol = 0
-        best_val = -1
-        mxvol = -1
-
-        for ask, vol in order_dict.items():
-            if(buy==0):
-                vol *= -1
-            tot_vol += vol
-            if tot_vol > mxvol:
-                mxvol = vol
-                best_val = ask
-        
-        return tot_vol, best_val
+    def determine_acceptable_price(state: TradingState):
+        pass
     
     def run(self, state: TradingState):
         # Only method required. It takes all buy and sell orders for all symbols as an input, and outputs a list of orders to be sent
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
-        
-        result = {'AMETHYSTS': [], 'STARFRUIT': []}
 
-        for product in ['AMETHYSTS', 'STARFRUIT']:
-            order_depth: OrderDepth = state.order_depths.get(product, OrderDepth())
+        result = {'AMETHYST': [], 'STARFRUIT': []}
+
+        for product_name, product_info in self.products.items():
+            order_depth: OrderDepth = state.order_depths[product_name]
             orders: List[Order] = []
-            acceptable_price = 10;  # Participant should calculate this value
-            print(f"Acceptable price for {product}: {acceptable_price}")
-            print(f"Buy Order depth for {product}: {len(order_depth.buy_orders)}, Sell order depth for {product}: {len(order_depth.sell_orders)}")
 
-            current_product_position = state.position.get(product, 0)
-            print(f"CurrentPos, PosLimit for {product}: {current_product_position} {self.POSITION_LIMIT[product]}")
+            acceptable_price = 5  # Participant should calculate this value  
 
-            osell = collections.OrderedDict(sorted(order_depth.sell_orders.items()))
-            obuy = collections.OrderedDict(sorted(order_depth.buy_orders.items(), reverse=True))
+            print("Acceptable price : " + str(acceptable_price))
+            print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
 
-            sell_vol, best_sell_pr = self.values_extract(osell)
-            buy_vol, best_buy_pr = self.values_extract(obuy, 1)
-            
-            undercut_buy = best_buy_pr + 1
-            undercut_sell = best_sell_pr - 1
+            currentPos = product_info['Current_Position']
 
-            lb = 10000
-            ub = 10000
+            if currentPos < product_info['Position_Limit']: # Buy
+                maxBuyQty = product_info['Position_Limit'] - product_info['Current_Position']
+                if len(order_depth.sell_orders) != 0:
+                    best_ask, best_ask_amount = max(order_depth.sell_orders.items(), key=lambda x: x[0])
+                    if int(best_ask) < acceptable_price:
+                        print("BUY"), str(-best_ask_amount) + "x", best_ask)
+                        num = max(-40, -product_info['Position_Limit'] -product_info['Current_Position'])
+                        orders.append(Order(product_name, best_ask, maxBuyQty))
+                        product_info["Current_Position"] += num
 
-            acc_bid = {'AMETHYSTS' : lb, 'STARFRUIT' : lb} # we want to buy at slightly below
-            acc_ask = {'AMETHYSTS' : ub, 'STARFRUIT' : ub} # we want to sell at slightly above
+            if currentPos >= product_info['Position_Limit']: # Sell
+                maxSellQty = product_info['Position_Limit'] - product_info['Current_Position']
 
-            bid_pr = min(undercut_buy, acc_bid[product]-1) # we will shift this by 1 to beat this price
-            sell_pr = max(undercut_sell, acc_ask[product]+1)
+                if len(order_depth.buy_orders) != 0:
+                    best_bid, best_bid_amount = max(order_depth.buy_orders.items(), key=lambda x: x[0])
+                    if int(best_bid) > acceptable_price:
+                        print("SELL", str(best_bid_amount) + "x", best_bid)
+                        num = min(40, product_info['Position_Limit'] - product_info['Current_Position'])
+                        orders.append(Order(product_name, best_bid, maxSellQty))
+                        product_info["Current_Position"] += num
 
-            current_pos = self.position[product]
-            print(current_pos)
-
-            if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] < 0):
-                newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
-                orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                self.position[product] += newnum
-                             
-            if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] > 15):
-                newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
-                orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                self.position[product] += newnum
-
-            if (current_pos < self.POSITION_LIMIT[product]):
-                newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
-                orders.append(Order(product, bid_pr, newnum))
-                self.position[product] += newnum
-
-            result[product] += orders
+            result[product_name] = orders    
     
         traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.
         
         conversions = 1
+        return result, conversions, traderData

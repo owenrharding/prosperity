@@ -69,17 +69,17 @@ class Trader:
             if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] < 0):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                current_pos += newnum
+                self.position[product] += newnum
                              
             if (current_pos < self.POSITION_LIMIT[product]) and (self.position[product] > 15):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, min(undercut_buy - 1, acc_bid - 1), newnum))
-                current_pos += newnum
+                self.position[product] += newnum
 
             if (current_pos < self.POSITION_LIMIT[product]):
                 newnum = min(40, self.POSITION_LIMIT[product] - current_pos)
                 orders.append(Order(product, bid_pr, newnum))
-                current_pos += newnum
+                self.position[product] += newnum
 
             result[product] += orders
     

@@ -31,6 +31,7 @@ class Trader:
                 maxBuyQty = product_info['Position_Limit'] - product_info['Current_Position']
                 if len(order_depth.sell_orders) != 0:
                     best_ask, best_ask_amount = max(order_depth.sell_orders.items(), key=lambda x: x[0])
+                    print(best_ask, best_ask_amount)
                     if int(best_ask) < acceptable_price:
                         print("BUY"), str(-best_ask_amount) + "x", best_ask)
                         num = max(-40, -product_info['Position_Limit'] -product_info['Current_Position'])
@@ -42,6 +43,7 @@ class Trader:
 
                 if len(order_depth.buy_orders) != 0:
                     best_bid, best_bid_amount = max(order_depth.buy_orders.items(), key=lambda x: x[0])
+                    print(best_bid, best_bid_amount)
                     if int(best_bid) > acceptable_price:
                         print("SELL", str(best_bid_amount) + "x", best_bid)
                         num = min(40, product_info['Position_Limit'] - product_info['Current_Position'])

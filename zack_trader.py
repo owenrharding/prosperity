@@ -14,7 +14,24 @@ class Trader:
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
             
-            acceptable_price = int((best_ask + best_bid) / 2) # Replace with worst ask and worst bid
+            best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
+            best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
+
+            if len(order_depth.sell_orders) != 0:
+                for i in range(len(order_depth.sell_orders) - 1):
+                    best_ask, best_ask_amount = list(order_depth.sell_orders.items())[i]
+                    best_ask_2, best_ask_amount_2 = list(order_depth.sell_orders.items())[i+1]
+                    if best_ask_amount_2 > best_ask_amount:
+                        best_ask, best_ask_amount = list(order_depth.sell_orders.items())[i+1]
+            
+            if len(order_depth.buy_orders) != 0:
+                for i in range(len(order_depth.buy_orders) - 1):
+                    best_bid, best_bid_amount = list(order_depth.buy_orders.items())[i]
+                    best_bid_2, best_bid_amount_2 = list(order_depth.buy_orders.items())[i+1]
+                    if best_bid_amount_2 > best_bid_amount:
+                        best_bid, best_bid_amount = list(order_depth.buy_orders.items())[i+1]        
+
+            acceptable_price = int((best_ask + best_bid) / 2)
 
             print("Acceptable price : " + str(acceptable_price))
             print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))

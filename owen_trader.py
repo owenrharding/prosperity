@@ -64,14 +64,20 @@ class Trader:
                 if int(best_ask) < acceptable_price:
                     if max_buy_volume > 0: #If the current position for this product allows for more volume to be bought, then buy
                         print("BUY", str(-best_ask_amount) + "x", best_ask)
-                        orders.append(Order(product, best_ask, -best_ask_amount))
+                        if best_ask_amount > max_buy_volume:
+                            orders.append(Order(product, best_ask, -best_ask_amount))
+                        else:
+                            orders.append(Order(product, best_ask, -max_buy_volume))
     
             # Place sell order if market buy orders are of acceptable price
             if len(order_depth.buy_orders) != 0:
                 if int(best_bid) > acceptable_price:
                     if max_sell_volume > 0: #If the current position for this product allows for more volume to be sold, then sell
                         print("SELL", str(best_bid_amount) + "x", best_bid)
-                        orders.append(Order(product, best_bid, -best_bid_amount))
+                        if best_bid_amount < max_sell_volume:
+                            orders.append(Order(product, best_bid, -best_bid_amount))
+                        else:
+                            orders.append(Order(product, best_bid, -max_sell_volume))
             
             result[product] = orders
     

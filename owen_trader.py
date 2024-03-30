@@ -27,21 +27,25 @@ class Trader:
             if len(order_depth.sell_orders) != 0:
                 ask_sum = 0
                 ask_vol = 0
-                for i in range(len(order_depth.sell_orders) - 1):
+                for i in range(len(order_depth.sell_orders)):
                     ask, ask_amount = list(order_depth.sell_orders.items())[i]
                     ask_sum += int(ask) * int(ask_amount)
                     ask_vol += int(ask_amount)
-                ask_avg = ask_sum / ask_vol
+                ask_avg = ask_sum / ask_vol if ask_vol != 0 else 0
+            else:
+                ask_avg = 0
             
             # Determine average bid price across orders and their corresponding amounts
             if len(order_depth.buy_orders) != 0:
                 bid_sum = 0
                 bid_vol = 0
-                for i in range(len(order_depth.sell_orders) - 1):
+                for i in range(len(order_depth.sell_orders)):
                     bid, bid_amount = list(order_depth.sell_orders.items())[i]
                     bid_sum += int(bid) * int(bid_amount)
                     bid_vol += int(bid_amount)
-                bid_avg = bid_sum / bid_vol
+                bid_avg = bid_sum / bid_vol if bid_vol != 0 else 0
+            else:
+                bid_avg = 0
 
             best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
             best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]

@@ -4,64 +4,51 @@ import string
 
 class Trader:
     
-    POSITION_LIMIT = {'AMETHYST': 20, 'STARFUIT': 20}
+    POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
 
-    def determine_acceptable_price(state: TradingState):
-        pass
-    
+    def calc_order(self, product: str, order_depth: OrderDepth, current_position: int):
+        product_orders: List[Order] = []
+
+        # Initialise best ask and bid to null
+        best_ask = None
+        best_bid = None
+
+        # Extract the best ask from order_depth, where best sell order is the lowest priced sell order on the market
+        if order_depth.sell_items:
+            best_ask = min(order_depth.sell_orders.keys())
+
+        # Extract the best bid from order depth, where best buy order is the highest priced buy order on the market
+        if order_depth.buy_orders:
+            best_bid = max(order_depth.buy_orders.keys())
+
+        # Determine max volume that can be bought/sold based on current position 
+        max_buy_volume = self.POSITION_LIMIT[product] - current_position 
+        max_sell_volume = current_position - self.POSITION_LIMIT[[product]]
+
+        # Add calculated order to product order
+        ### BUY ### 
+        if best_ask is not None:
+            product_orders.append(Order(product, best_ask, max_buy_volume))
+
+        ### SELL ###
+        if best_bid is not None:
+            product_orders.append(Order(product, best_bid, max_sell_volume))
+
+        return product_orders
+
     def run(self, state: TradingState):
-        # Only method required. It takes all buy and sell orders for all symbols as an input, and outputs a list of orders to be sent
+
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
 
-        result = {'AMETHYST': [], 'STARFRUIT': []}
-
-        # Iterate over all the keys (the available products) contained in the order dephts
-        for key, val in state.position.items():
-            self.position[key] = val
-        print()
-        for key, val in state.position.items():
-            print(f'{key} position: {val}')
+        result = {'AMETHYSTS': [], 'STARFRUIT': []}
 
         for product in state.order_depths:
             order_depth: OrderDepth = state.order_depths[product]
-            orders: List[Order] = []
-
-            acceptable_price = 5  # Participant should calculate this value
-
-            print("Acceptable price : " + str(acceptable_price))
-            print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
-
-            currentProductPosition = state.position[product]
-
-            ### BUY ### 
-            # If current position is less than the position limit, then it's okay to buy
-            if currentProductPosition < self.POSITION_LIMIT[product]:
-                # Buying the max buy quantity would place our position at the upper position limit
-                maxBuyQty = self.POSITION_LIMIT[product] - currentProductPosition
-
-                if len(order_depth.sell_orders) != 0:
-                    best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
-                    if int(best_ask) < acceptable_price:
-                        print("BUY", str(-best_ask_amount) + "x", best_ask)
-                        orders.append(Order(product, best_ask, maxBuyQty))
-    
-            ### SELL ###
-            # If current position is greater than or equal to the position limit, then it's okay to sell
-            if currentProductPosition >= self.POSITION_LIMIT[product]:
-                # Selling the max sell quantity would place our position at the lower position limit
-                maxSellQty = currentProductPosition - self.POSITION_LIMIT[product]
-
-                if len(order_depth.buy_orders) != 0:
-                    best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
-                    if int(best_bid) > acceptable_price:
-                        print("SELL", str(best_bid_amount) + "x", best_bid)
-                        orders.append(Order(product, best_bid, maxSellQty))
+            current_position = state.position[product]
+            
+            orders: List[Order] = self.calc_order(product, order_depth, current_position)
             
             result[product] = orders
     
-    
-        traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.
-        
-        conversions = 1
-        return result, conversions, traderData
+        return result

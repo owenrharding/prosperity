@@ -74,7 +74,7 @@ class Trader:
                 if int(best_bid) > acceptable_price:
                     if max_sell_volume > 0: #If the current position for this product allows for more volume to be sold, then sell
                         print("SELL", str(best_bid_amount) + "x", best_bid)
-                        if best_bid_amount < max_sell_volume:
+                        if best_bid_amount > max_sell_volume:
                             orders.append(Order(product, best_bid, -best_bid_amount))
                         else:
                             orders.append(Order(product, best_bid, -max_sell_volume))

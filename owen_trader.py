@@ -39,8 +39,8 @@ class Trader:
             if len(order_depth.buy_orders) != 0:
                 bid_sum = 0
                 bid_vol = 0
-                for i in range(len(order_depth.sell_orders)):
-                    bid, bid_amount = list(order_depth.sell_orders.items())[i]
+                for i in range(len(order_depth.buy_orders)):
+                    bid, bid_amount = list(order_depth.buy_orders.items())[i]
                     bid_sum += int(bid) * int(bid_amount)
                     bid_vol += int(bid_amount)
                 bid_avg = bid_sum / bid_vol if bid_vol != 0 else 0

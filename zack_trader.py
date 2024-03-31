@@ -3,6 +3,8 @@ from typing import List
 import string
 
 class Trader:
+
+    POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
     
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)
@@ -13,7 +15,14 @@ class Trader:
         for product in state.order_depths:
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
+
+            # Position limit
+            current_position = state.position.get(product, 0)
             
+            # Determine max volume that can be bought/sold
+            max_buy_volume = self.POSITION_LIMIT[product] - current_position
+            max_sell_volume = self.POSITION_LIMIT[product] + current_position
+
             best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
             best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
 
@@ -39,15 +48,23 @@ class Trader:
             if len(order_depth.sell_orders) != 0:
                 best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
                 if int(best_ask) < acceptable_price:
-                    print("BUY", str(-best_ask_amount) + "x", best_ask)
-                    orders.append(Order(product, best_ask, -best_ask_amount))
+                    if max_buy_volume >= best_ask_amount:
+                        print("BUY", str(-best_ask_amount) + "x", best_ask)
+                        orders.append(Order(product, best_ask, -best_ask_amount))
+                    else:
+                        print("BUY", str(-max_buy_volume) + "x", best_ask)
+                        orders.append(Order(product, best_ask, -max_buy_volume))
     
             if len(order_depth.buy_orders) != 0:
                 best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
                 if int(best_bid) > acceptable_price:
-                    print("SELL", str(best_bid_amount) + "x", best_bid)
-                    orders.append(Order(product, best_bid, -best_bid_amount))
-            
+                    if max_sell_volume >= best_bid_amount:
+                        print("SELL", str(best_bid_amount) + "x", best_bid)
+                        orders.append(Order(product, best_bid, -best_bid_amount))
+                    else:
+                        print("SELL", str(max_sell_volume) + "x", best_bid)
+                        orders.append(Order(product, best_bid, -max_sell_volume))
+                        
             result[product] = orders
     
 		    # String value holding Trader state data required. 

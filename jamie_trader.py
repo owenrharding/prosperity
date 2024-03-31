@@ -44,14 +44,28 @@ class Trader:
             if len(order_depth.sell_orders) != 0:
                 best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
                 if int(best_ask) < acceptable_price:
-                    print("BUY", str(-best_ask_amount) + "x", best_ask)
-                    orders.append(Order(product_name, best_ask, -best_ask_amount))
+                    if -best_ask_amount + product_info["Current_Position"] > product_info["Position_Limit"]:
+                        best_ask_amount = (product_info["Position_Limit"] - product_info["Current_Position"])
+                        best_ask_amount = best_ask_amount * -1
+
+                    if best_ask_amount != 0: 
+                        print("BUY", str(-best_ask_amount) + "x", best_ask)
+                        orders.append(Order(product_name, best_ask, -best_ask_amount))
+                        product_info['Current_Position'] += -best_ask_amount
+                        print(f"Best Ask: {-best_ask_amount} New Position: {product_info['Current_Position']}")
     
             if len(order_depth.buy_orders) != 0:
                 best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
                 if int(best_bid) > acceptable_price:
-                    print("SELL", str(best_bid_amount) + "x", best_bid)
-                    orders.append(Order(product_name, best_bid, -best_bid_amount))
+                    if -best_bid_amount + product_info["Current_Position"] < -product_info["Position_Limit"]:
+                        best_bid_amount = -product_info["Position_Limit"] - product_info["Current_Position"]
+                        best_bid_amount = best_bid_amount * -1
+
+                    if best_ask_amount != 0:
+                        print("SELL", str(best_bid_amount) + "x", best_bid)
+                        orders.append(Order(product_name, best_bid, -best_bid_amount))
+                        product_info['Current_Position'] += -best_bid_amount
+                        print(f"Best Bid: {best_bid_amount} New Position: {product_info['Current_Position']}")
             
             result[product_name] = orders
     

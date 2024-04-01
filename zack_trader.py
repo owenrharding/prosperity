@@ -5,6 +5,7 @@ import string
 class Trader:
 
     POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
+    LAST_ACCEPTABLE_PRICE = {'AMETHYSTS': 0, 'STARFRUIT': 0}
     
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)
@@ -40,7 +41,11 @@ class Trader:
                     if best_bid_amount_2 > best_bid_amount:
                         best_bid, best_bid_amount = list(order_depth.buy_orders.items())[i+1]        
 
-            acceptable_price = int((best_ask + best_bid) / 2)
+            if len(order_depth.buy_orders) > 1 and len(order_depth.sell_orders) > 1:
+                acceptable_price = int((best_ask + best_bid) / 2)
+                self.LAST_ACCEPTABLE_PRICE[product] = acceptable_price
+            else:
+                acceptable_price = self.LAST_ACCEPTABLE_PRICE[product]
 
             print("Acceptable price : " + str(acceptable_price))
             print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))

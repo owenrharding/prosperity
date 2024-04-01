@@ -5,7 +5,46 @@ import string
 class Trader:
 
     POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
+
+    PROD_STATE_COUNT = {'AMETHYSTS': 0, 'STARFRUIT': 0}
+
+    BUY_FLAGS = {'AMETHYSTS': False, 'STARFRUIT': False}
+    SELL_FLAGS = {'AMETHYSTS': False, 'STARFRUIT': False}
+
+    # Best Acceptable Prices (BAP) with varying scopes
+    BAP_GLOBAL = {'AMETHYSTS': 0, 'STARFRUIT': 0} # Best Acceptable Price ever recorded for the product
+    BAP_1 = {'AMETHYSTS': 0, 'STARFRUIT': 0} 
+    BAP_2 = {'AMETHYSTS': 0, 'STARFRUIT': 0} 
+
+    # Historical Acceptable Prices (HAP) with varying numbers of value reserves
+    HAP_1 = {'AMETHYSTS': [], 'STARFRUIT': []}
+    HAP_2 = {'AMETHYSTS': [], 'STARFRUIT': []}
+
+    BAP_LIST = [BAP_1, BAP_2]
+    BAP_SCOPE = {'BAP_1': 20, 'BAP_2': 100}
+    HAP_LIST = [HAP_1, HAP_2]
+    HAP_SCOPE = {'HAP_1': 20, 'HAP_2': 100}
     
+    def calculate_baps_and_haps(self, product: str, current_acceptable_price: int):
+        # Set Historical Acceptable Price (HAP) values based off acceptable price for current Trading State:
+        for hap in self.HAP_LIST:
+            # Initially populate HAP
+            if len(self.haps) < self.HAP_SCOPE[hap]:
+                self.hap[product].append(current_acceptable_price)
+            else:
+                # Remove first value from self.HAP_1[product], THEN ###############################################################################
+                self.hap[product].append(current_acceptable_price)
+        
+        # Calculate Best Acceptable Price (BAP) values based off acceptable price for current Trading State:
+        # Global
+        if current_acceptable_price > self.BAP_GLOBAL[product]:
+            self.BAP_GLOBAL[product] = current_acceptable_price
+        # Scoped
+        for bap in self.BAP_LIST:
+            bap_counter = 0
+            corresponding_hap = self.HAP_LIST[bap_counter][product]
+            self.bap = max(corresponding_hap)
+
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
@@ -54,7 +93,10 @@ class Trader:
             if ask_avg and bid_avg:
                 acceptable_price = (ask_avg + bid_avg) / 2
             else:
-                acceptable_price = (best_ask + best_bid) / 2
+                ###################acceptable_price = (best_ask + best_bid) / 2######################################################################
+                acceptable_price = None
+
+            self.calculate_baps_and_haps(product, acceptable_price)
 
             print("Acceptable price : " + str(acceptable_price))
             print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
@@ -74,7 +116,7 @@ class Trader:
                 if int(best_bid) > acceptable_price:
                     if max_sell_volume > 0: #If the current position for this product allows for more volume to be sold, then sell
                         print("SELL", str(best_bid_amount) + "x", best_bid)
-                        if best_bid_amount > max_sell_volume:
+                        if -best_bid_amount > max_sell_volume:
                             orders.append(Order(product, best_bid, -best_bid_amount))
                         else:
                             orders.append(Order(product, best_bid, -max_sell_volume))

@@ -98,8 +98,10 @@ class Trader:
 
             pred_acc_price_20 = self.calculate_linear_regression(self.PRICE_HISTORY[product], 20, state.timestamp)
             pred_acc_price_100 = self.calculate_linear_regression(self.PRICE_HISTORY[product], 100, state.timestamp)
+            pred_acc_price_global = self.calculate_linear_regression(self.PRICE_HISTORY[product], len(self.PRICE_HISTORY[product]), state.timestamp)
             print("Predicted Acceptable Price (20): ", pred_acc_price_20)
             print("Predicted Acceptable Price (100): ", pred_acc_price_100)
+            print("Predicted Acceptable Price (global): ", pred_acc_price_global)
             self.update_price_history(product, acceptable_price, state)
 
             print("Acceptable price : " + str(acceptable_price))

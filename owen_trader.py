@@ -43,7 +43,7 @@ class Trader:
         for bap in self.BAP_LIST:
             bap_counter = 0
             corresponding_hap = self.HAP_LIST[bap_counter][product]
-            self.bap = max(corresponding_hap)
+            self.bap = avg(corresponding_hap)
 
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)

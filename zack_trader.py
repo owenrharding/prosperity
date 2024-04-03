@@ -4,8 +4,8 @@ import string
 
 class Trader:
 
+    # Define position limits for each product.
     POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
-    LAST_ACCEPTABLE_PRICE = {'AMETHYSTS': 0, 'STARFRUIT': 0}
     
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)
@@ -17,65 +17,47 @@ class Trader:
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
 
-            # Position limit
+            # Get current position on respective product.
             current_position = state.position.get(product, 0)
             
-            # Determine max volume that can be bought/sold
+            # Determine max volume that can be bought/sold.
             max_buy_volume = self.POSITION_LIMIT[product] - current_position
             max_sell_volume = self.POSITION_LIMIT[product] + current_position
 
-            best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
-            best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
-
-            if len(order_depth.sell_orders) != 0:
-                for i in range(len(order_depth.sell_orders) - 1):
-                    best_ask, best_ask_amount = list(order_depth.sell_orders.items())[i]
-                    best_ask_2, best_ask_amount_2 = list(order_depth.sell_orders.items())[i+1]
-                    if best_ask_amount_2 > best_ask_amount:
-                        best_ask, best_ask_amount = list(order_depth.sell_orders.items())[i+1]
+            # Get values with greatest trading volume (GTV).
+            gtv_ask_price = list(order_depth.sell_orders.items())[-1][0]
+            gtv_bid_price = list(order_depth.buy_orders.items())[-1][0]
             
-            if len(order_depth.buy_orders) != 0:
-                for i in range(len(order_depth.buy_orders) - 1):
-                    best_bid, best_bid_amount = list(order_depth.buy_orders.items())[i]
-                    best_bid_2, best_bid_amount_2 = list(order_depth.buy_orders.items())[i+1]
-                    if best_bid_amount_2 > best_bid_amount:
-                        best_bid, best_bid_amount = list(order_depth.buy_orders.items())[i+1]        
-
-            if len(order_depth.buy_orders) > 1 and len(order_depth.sell_orders) > 1:
-                acceptable_price = int((best_ask + best_bid) / 2)
-                self.LAST_ACCEPTABLE_PRICE[product] = acceptable_price
-            else:
-                acceptable_price = self.LAST_ACCEPTABLE_PRICE[product]
+            # Calculate acceptable price using most traded values.
+            acceptable_price = int((gtv_ask_price + gtv_bid_price) / 2)
 
             print("Acceptable price : " + str(acceptable_price))
             print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
 
             if len(order_depth.sell_orders) != 0:
-                best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
-                if int(best_ask) < acceptable_price:
-                    if max_buy_volume >= best_ask_amount:
-                        print("BUY", str(-best_ask_amount) + "x", best_ask)
-                        orders.append(Order(product, best_ask, -best_ask_amount))
-                    else:
-                        print("BUY", str(-max_buy_volume) + "x", best_ask)
-                        orders.append(Order(product, best_ask, -max_buy_volume))
-    
+                for price, amount in order_depth.sell_orders.items(): # Loop through each sell order.
+                    if int(price) < acceptable_price: # Compare price against acceptable price to determine
+                        if max_buy_volume >= amount: # Check if volume can be bought, without exceeding position limits.
+                            print("BUY", str(-amount) + "x", price)
+                            orders.append(Order(product, price, -amount))
+                        else: # If position limit is exceeded, purchase quantity at maximum allowable volume.
+                            print("BUY", str(-max_buy_volume) + "x", price)
+                            orders.append(Order(product, price, -max_buy_volume))
+            
+            # Buy orders use same logic as sell orders.
             if len(order_depth.buy_orders) != 0:
-                best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
-                if int(best_bid) > acceptable_price:
-                    if max_sell_volume >= best_bid_amount:
-                        print("SELL", str(best_bid_amount) + "x", best_bid)
-                        orders.append(Order(product, best_bid, -best_bid_amount))
-                    else:
-                        print("SELL", str(max_sell_volume) + "x", best_bid)
-                        orders.append(Order(product, best_bid, -max_sell_volume))
-                        
+                for price, amount in order_depth.buy_orders.items():
+                    if int(price) > acceptable_price:
+                        if max_sell_volume >= amount:
+                            print("SELL", str(amount) + "x", price)
+                            orders.append(Order(product, price, -amount))
+                        else:
+                            print("SELL", str(max_sell_volume) + "x", price)
+                            orders.append(Order(product, price, -max_sell_volume))
+
             result[product] = orders
-    
-		    # String value holding Trader state data required. 
-				# It will be delivered as TradingState.traderData on next execution.
+
         traderData = "SAMPLE" 
         
-				# Sample conversion request. Check more details below. 
         conversions = 1
         return result, conversions, traderData

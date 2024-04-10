@@ -9,9 +9,18 @@ class Trader:
     # Define position limits for each product.
     POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
 
+    BUY_FLAGS = {'AMETHYSTS': False, 'STARFRUIT': False}
+    SELL_FLAGS = {'AMETHYSTS': False, 'STARFRUIT': False}
+
     # Define price history dictionaries for each product. These will store every historical acceptable price calculated by the algorithm.
     # These are stored in dictionaries, where timestamp is the key, and the acceptable price is the value.
     PRICE_HISTORY = {'AMETHYSTS': {}, 'STARFRUIT': {}}
+
+    # Stored averages of price histories over a short and long term time frame at each timestamp
+    SHORT_MOVING_AVERAGE_HISTORY = {'AMETHYSTS': {}, 'STARFRUIT': {}}
+    LONG_MOVING_AVERAGE_HISTORY = {'AMETHYSTS': {}, 'STARFRUIT': {}}
+    SHORT_WINDOW = 10
+    LONG_WINDOW = 50
 
     """
     Updates price history arrays stored in Trader class.
@@ -19,8 +28,29 @@ class Trader:
     def update_price_history(self, product: str, acceptable_price: float, state: TradingState):
         # Add acceptable price to corresponding product in PRICE_HISTORY dictionary
         if product in self.PRICE_HISTORY:
-            product_dict = self.PRICE_HISTORY[product]
-            product_dict[state.timestamp] = acceptable_price
+            self.PRICE_HISTORY[product][state.timestamp] = acceptable_price
+    
+    """
+    Updates history of averages in certain scopes (long and short).
+    """
+    def update_average_history(self, product: str, state: TradingState):
+        if product in self.SHORT_MOVING_AVERAGE_HISTORY:
+            # If the amount of historical values is greater than the window, then calculate based off the window
+            if len(self.PRICE_HISTORY[product]) > self.SHORT_WINDOW:
+                short_term_prices = list(self.PRICE_HISTORY[product].values())[-self.SHORT_WINDOW:]
+            # Else calculate based on the values which have been saved up until now.
+            # ie. If window is 50, but there are only 38 values, the sma for this window will be calculated using the latest 38
+            else:
+                short_term_prices = list(self.PRICE_HISTORY[product].values())
+            # Calculate mean
+            self.SHORT_MOVING_AVERAGE_HISTORY[product][state.timestamp] = st.mean(short_term_prices)
+
+            # Same logic as above
+            if len(self.PRICE_HISTORY[product]) > self.LONG_WINDOW:
+                long_term_prices = list(self.PRICE_HISTORY[product].values())[-self.LONG_WINDOW:]
+            else:
+                long_term_prices = list(self.PRICE_HISTORY[product].values())
+            self.LONG_MOVING_AVERAGE_HISTORY[product][state.timestamp] = st.mean(long_term_prices)
     
     """
     Returns the predicted value of a dependent variable at an increment of an independent
@@ -33,13 +63,13 @@ class Trader:
         # Get list of (timestamp, price) tuples
         data_tuples = list(data.items())
 
-        # Get the last scope number of elements from the end of the list
-        last_scope_data = data_tuples[-scope:] # Array slicing, not sure if I've done it right
+        # Get the latest scope number of elements from the end of the list
+        latest_scope_data = data_tuples[-scope:] # Array slicing, not sure if I've done it right
 
-        # Extract timestamps and prices from the last scope amount of data
+        # Extract timestamps and prices from the latest scope amount of data
         # x_data is timestamps, y_data is prices
-        x_data = np.array([item[0] for item in last_scope_data]) # Had to get ChatGPT to help me with this one :(
-        y_data = np.array([item[1] for item in last_scope_data])
+        x_data = np.array([item[0] for item in latest_scope_data]) # Had to get ChatGPT to help me with this one :(
+        y_data = np.array([item[1] for item in latest_scope_data])
         n = np.size(x_data)
 
         x_mean = np.mean(x_data)
@@ -73,50 +103,66 @@ class Trader:
             max_buy_volume = self.POSITION_LIMIT[product] - current_position
             max_sell_volume = self.POSITION_LIMIT[product] + current_position
 
-            # True Average
-            #if len(order_depth.sell_orders) != 0:
-            #    ask_sum = 0
-            #    ask_vol = 0
-            #    for i in range(len(order_depth.sell_orders)):
-            #        ask, ask_amount = list(order_depth.sell_orders.items())[i]
-            #        ask_sum += int(ask) * int(ask_amount)
-            #        ask_vol += int(ask_amount)
-            #    ask_avg = ask_sum / ask_vol if ask_vol != 0 else 0
-            #
-            ## Determine average bid price across orders and their corresponding amounts
-            #if len(order_depth.buy_orders) != 0:
-            #    bid_sum = 0
-            #    bid_vol = 0
-            #    for i in range(len(order_depth.buy_orders)):
-            #        bid, bid_amount = list(order_depth.buy_orders.items())[i]
-            #        bid_sum += int(bid) * int(bid_amount)
-            #        bid_vol += int(bid_amount)
-            #    bid_avg = bid_sum / bid_vol if bid_vol != 0 else 0
-
             # Get values with greatest trading volume (GTV).
-            gtv_ask_price = list(order_depth.sell_orders.items())[-1][0]
-            gtv_bid_price = list(order_depth.buy_orders.items())[-1][0]
+            best_ask_price = list(order_depth.sell_orders.items())[0][0]
+            best_bid_price = list(order_depth.buy_orders.items())[0][0]
             
-            acceptable_price = int((gtv_ask_price + gtv_bid_price) / 2)
+            median_price = int((best_ask_price + best_bid_price) / 2)
+            acceptable_price = median_price
 
-            if len(self.PRICE_HISTORY[product]) > 20:
-                pred_acc_price_20 = self.calculate_linear_regression(self.PRICE_HISTORY[product], 20, state.timestamp)
-                print("Predicted Acceptable Price (20): ", pred_acc_price_20)
-            if len(self.PRICE_HISTORY[product]) > 100:
-                pred_acc_price_100 = self.calculate_linear_regression(self.PRICE_HISTORY[product], 100, state.timestamp)
-                print("Predicted Acceptable Price (100): ", pred_acc_price_100)
-            
-            pred_acc_price_global = self.calculate_linear_regression(self.PRICE_HISTORY[product], (len(self.PRICE_HISTORY[product]) - 2), state.timestamp)
-            print("Predicted Acceptable Price (global): ", pred_acc_price_global)
-            
-            self.update_price_history(product, acceptable_price, state)
+            # Print regression predictions.
+            if product == 'STARFRUIT':
+                ### LINEAR REGRESSION ###
+                #print("***LINEAR REGRESSION***")
+                #regression_scopes = [10, 50, 250, 500]
+                #FUTURE_PREDICTION = 20
+                #FUTURE_TIMESTAMP = state.timestamp + (100 * FUTURE_PREDICTION)
+                #ERROR_VALUE = 0.0005
+                #for scope in regression_scopes:
+                #    lr_price = None
+                #    if len(self.PRICE_HISTORY[product]) > scope:
+                #        lr_price = self.calculate_linear_regression(self.PRICE_HISTORY[product], scope, FUTURE_TIMESTAMP)
+                #    if lr_price is None:
+                #        continue;
+                #    print(scope, "predicts that", FUTURE_PREDICTION, "states from now at timestamp", FUTURE_TIMESTAMP, "the mid price will be:", lr_price, ".")
 
-            if len(self.PRICE_HISTORY[product]) > 20:
-                last_twenty_prices = list(self.PRICE_HISTORY[product].values())[-20:]
-                acceptable_price = st.mean(last_twenty_prices)
-            
-            print("Acceptable price : " + str(acceptable_price))
-            print("Buy Order depth : " + str(len(order_depth.buy_orders)) + ", Sell order depth : " + str(len(order_depth.sell_orders)))
+                #    if lr_price <= acceptable_price*(1+ERROR_VALUE) and lr_price >= acceptable_price*(1-ERROR_VALUE):
+                #        print("The price is holding (+-", ERROR_VALUE*100, "%)")
+                #    elif lr_price > acceptable_price*(1+ERROR_VALUE):
+                #        print("The price is on the way up.\n")
+                #    else: # lr_price < acceptable_price*0.99
+                #        print("The price is on the way down.\n")
+                #    
+                #print("Current Acceptable Price for timestamp", state.timestamp, "is:", acceptable_price)
+
+                ### SIMPLE MOVING AVERAGE ###
+                print("***SIMPLE MOVING AVERAGE***")
+                # You need to first determine a price in order to determine whether you should 
+                # buy or sell using simple moving average at said acceptable price
+                self.update_price_history(product, median_price, state)
+                self.update_average_history(product, state)
+
+                # Extract data from Short SMA
+                short_sma_list = list(self.SHORT_MOVING_AVERAGE_HISTORY[product].items())
+                # Find most recent and second most recent values to find gradient
+                latest_short_sma_timestamp, latest_short_sma = short_sma_list[-1]
+                prev_short_sma_timestamp, prev_short_sma = short_sma_list[-2]
+                # Calculating rise over run
+                short_sma_gradient = (latest_short_sma - prev_short_sma) / (latest_short_sma_timestamp - prev_short_sma_timestamp)
+
+                # Extract data from Long SMA
+                long_sma_list = list(self.LONG_MOVING_AVERAGE_HISTORY[product].items())
+                # Find most recent and second most recent values to find gradient
+                latest_long_sma_timestamp, latest_long_sma = long_sma_list[-1]
+                prev_long_sma_timestamp, prev_long_sma = long_sma_list[-2]
+                # Calculating rise over run
+                long_sma_gradient = (latest_long_sma - prev_long_sma) / (latest_long_sma_timestamp - prev_long_sma_timestamp)
+
+                print("Short Term SMA is:", latest_short_sma)
+                print("Short Term SMA GRADIENT is:", short_sma_gradient)
+                print("Long Term SMA is:", latest_long_sma)
+                print("Long Term SMA GRADIENT is:", long_sma_gradient)
+
 
             if len(order_depth.sell_orders) != 0:
                 for price, amount in order_depth.sell_orders.items(): # Loop through each sell order.

@@ -9,8 +9,6 @@ class Trader:
     # Define position limits for each product.
     POSITION_LIMIT = {'AMETHYSTS': 20, 'STARFRUIT': 20}
 
-    STARFRUIT_ORDER_FLAGS = {'BUY': False, 'SELL': False}
-
     # Define price history dictionaries for each product. These will store every historical acceptable price calculated by the algorithm.
     # These are stored in dictionaries, where timestamp is the key, and the acceptable price is the value.
     PRICE_HISTORY = {'AMETHYSTS': {}, 'STARFRUIT': {}}
@@ -41,7 +39,7 @@ class Trader:
             # ie. If window is 50, but there are only 38 values, the sma for this window will be calculated using the current 38
             else:
                 short_term_prices = list(self.PRICE_HISTORY[product].values())
-            # Calculate mean
+            # Calculate mean for current timestamp
             self.SHORT_SMA_HISTORY[product][state.timestamp] = st.mean(short_term_prices)
 
             # Same logic as above
@@ -85,10 +83,6 @@ class Trader:
         y_pred = m * x_value + c
         return y_pred
 
-    def reset_starfruit_flags(self):
-        self.STARFRUIT_ORDER_FLAGS['BUY'] = False 
-        self.STARFRUIT_ORDER_FLAGS['SELL'] = False 
-
     def run(self, state: TradingState):
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
@@ -115,31 +109,10 @@ class Trader:
             
             # Calculate acceptable price using most traded values.
             median_price = int((gtv_ask_price + gtv_bid_price) / 2)
+            acceptable_price = median_price
 
 
             if product == 'STARFRUIT':
-                ### LINEAR REGRESSION ###
-                #print("***LINEAR REGRESSION***")
-                #regression_scopes = [10, 50, 250, 500]
-                #FUTURE_PREDICTION = 20
-                #FUTURE_TIMESTAMP = state.timestamp + (100 * FUTURE_PREDICTION)
-                #ERROR_VALUE = 0.0005
-                #for scope in regression_scopes:
-                #    lr_price = None
-                #    if len(self.PRICE_HISTORY[product]) > scope:
-                #        lr_price = self.calculate_linear_regression(self.PRICE_HISTORY[product], scope, FUTURE_TIMESTAMP)
-                #    if lr_price is None:
-                #        continue;
-                #    print(scope, "predicts that", FUTURE_PREDICTION, "states from now at timestamp", FUTURE_TIMESTAMP, "the mid price will be:", lr_price, ".")
-
-                #    if lr_price <= acceptable_price*(1+ERROR_VALUE) and lr_price >= acceptable_price*(1-ERROR_VALUE):
-                #        print("The price is holding (+-", ERROR_VALUE*100, "%)")
-                #    elif lr_price > acceptable_price*(1+ERROR_VALUE):
-                #        print("The price is on the way up.\n")
-                #    else: # lr_price < acceptable_price*0.99
-                #        print("The price is on the way down.\n")
-                #    
-                #print("Current Acceptable Price for timestamp", state.timestamp, "is:", acceptable_price)
 
                 ### SIMPLE MOVING AVERAGE ###
                 print("***SIMPLE MOVING AVERAGE***")
@@ -174,47 +147,32 @@ class Trader:
                 #print("Long Term SMA GRADIENT is:", long_sma_gradient)
 
                 ### BUY/SELL LOGIC BASED OFF SMA ###
-                if (current_short_sma > current_long_sma) and (prev_long_sma > prev_short_sma): # Intersection with short SMA going from below to above long
+                if current_short_sma > current_long_sma:
                     # BUY
-                    self.STARFRUIT_ORDER_FLAGS['BUY'] = True
-                    print("BUY FLAG SET.")
-                if (current_long_sma > current_short_sma) and (prev_short_sma > prev_long_sma): # Intersection with short SMA going from above to below long
+                    print("STARFRUIT BUY TRUE")
+                    for price, amount in order_depth.sell_orders.items(): # Loop through each sell order.
+                        if int(price) < acceptable_price: # Compare price against acceptable price to determine
+                            if max_buy_volume >= amount: # Check if volume can be bought, without exceeding position limits.
+                                print("BUY", str(-amount) + "x", product, price)
+                                orders.append(Order(product, price, -amount))
+                            else: # If position limit is exceeded, purchase quantity at maximum allowable volume.
+                                print("BUY", str(-max_buy_volume) + "x", product, price)
+                                orders.append(Order(product, price, -max_buy_volume))
+
+                if current_long_sma > current_short_sma:
                     # SELL
-                    self.STARFRUIT_ORDER_FLAGS['SELL'] = True
-                    print("SELL FLAG SET.")
+                    print("STARFRUIT SELL TRUE")
+                    for price, amount in order_depth.buy_orders.items():
+                        if int(price) > acceptable_price:
+                            if max_sell_volume >= amount:
+                                print("SELL", str(amount) + "x", product, price)
+                                orders.append(Order(product, price, -amount))
+                            else:
+                                print("SELL", str(max_sell_volume) + "x", product, price)
+                                orders.append(Order(product, price, -max_sell_volume))
 
 
-            acceptable_price = median_price
-
-
-            if product == 'STARFRUIT':
-                ### BUY ###
-                if len(order_depth.sell_orders) != 0:
-                    if self.STARFRUIT_ORDER_FLAGS['BUY'] == True:
-                        print("STARFRUIT BUY TRUE")
-                        for price, amount in order_depth.sell_orders.items(): # Loop through each sell order.
-                            if int(price) < acceptable_price: # Compare price against acceptable price to determine
-                                if max_buy_volume >= amount: # Check if volume can be bought, without exceeding position limits.
-                                    print("BUY", str(-amount) + "x", product, price)
-                                    orders.append(Order(product, price, -amount))
-                                else: # If position limit is exceeded, purchase quantity at maximum allowable volume.
-                                    print("BUY", str(-max_buy_volume) + "x", product, price)
-                                    orders.append(Order(product, price, -max_buy_volume))
-            
-                ### SELL ###
-                # Buy orders use same logic as sell orders.
-                if len(order_depth.buy_orders) != 0:
-                    if self.STARFRUIT_ORDER_FLAGS['SELL'] == True:
-                        print("STARFRUIT SELL TRUE")
-                        for price, amount in order_depth.buy_orders.items():
-                            if int(price) > acceptable_price:
-                                if max_sell_volume >= amount:
-                                    print("SELL", str(amount) + "x", product, price)
-                                    orders.append(Order(product, price, -amount))
-                                else:
-                                    print("SELL", str(max_sell_volume) + "x", product, price)
-                                    orders.append(Order(product, price, -max_sell_volume))
-            else:
+            if product != 'STARFRUIT':
                 ### BUY ###
                 if len(order_depth.sell_orders) != 0:
                     for price, amount in order_depth.sell_orders.items(): # Loop through each sell order.

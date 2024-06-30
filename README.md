@@ -8,4 +8,6 @@ Unfortuneately we weren't able to finish the challenge as it was chewing into to
 
 After the first round, we had finished 70th Australia. We were pretty happy with this as we'd coded a somewhat effective mean reversion strategy from something which we had no idea what we were doing.
 From there we decided to go a lot harder, and did a lot more research into market trading.
-For round two, Zack continued to work on our mean reversion algorithm while I started coding some more modular techniques like linar
+For round two, Zack continued to work on our mean reversion algorithm while I started coding some more modular techniques like creating data structures for data history, linear regression, and simple moving average.
+While the code both of us produced were surprisingly functional, we couldn't figure out how to use them in the context of the trading simulation (we're software engineers, not data scientists). 
+So although we didn't do as well as we would've liked in the competition, there's some quality code in there that we're still pretty proud of.
